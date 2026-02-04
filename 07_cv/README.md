@@ -52,7 +52,6 @@
 - Python, NumPy, Pandas, Matplotlib
 - **PyTorch / torchvision** (transfer learning)
 
-> Ранее часть проектов делалась на TensorFlow, но в этом проекте удобнее получилось на PyTorch — подход и логика остаются одинаковыми: датасет → аугментации → fine-tuning → MAE.
 
 ---
 

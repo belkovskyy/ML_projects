@@ -25,6 +25,7 @@
 
 ---
 
+```text
 ML_projects/
 01_data_preprocessing/
 02_eda/
@@ -33,7 +34,6 @@ ML_projects/
 05_ml_business/
 06_nlp/
 07_cv/
-
 
 ---
 

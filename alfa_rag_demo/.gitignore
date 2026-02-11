@@ -1,0 +1,18 @@
+# ---- RAG: data/artifacts (не пушим) ----
+alfa_rag_demo/data/*
+!alfa_rag_demo/data/README.md
+!alfa_rag_demo/data/.gitkeep
+
+alfa_rag_demo/**/*.faiss
+alfa_rag_demo/**/*.npy
+alfa_rag_demo/**/*.parquet
+alfa_rag_demo/**/__pycache__/
+alfa_rag_demo/**/*.pyc
+alfa_rag_demo/**/.ipynb_checkpoints/
+
+# ---- общие ----
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+

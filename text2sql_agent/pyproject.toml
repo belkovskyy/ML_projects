@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text2sql-agent"
+version = "0.3.0"
+description = "Text-to-SQL agent for Northwind (Postgres) with guardrails, schema introspection, schema search, few-shot prompting, and self-healing."
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["text2sql"]

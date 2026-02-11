@@ -1,0 +1,13 @@
+python-dotenv>=1.0.0
+psycopg[binary]>=3.1.12
+pandas>=2.0.0
+sqlparse>=0.4.4
+requests>=2.31.0
+
+# UI stack pinned for Windows stability
+streamlit==1.31.1
+click==8.0.4
+protobuf==3.20.3
+altair==4.2.2
+
+wheel<0.46

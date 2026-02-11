@@ -1,0 +1,11 @@
+pandas
+numpy<2
+scikit-learn
+joblib
+requests
+tqdm
+sentence-transformers
+torch
+faiss-cpu
+pyarrow
+streamlit

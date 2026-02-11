@@ -1,4 +1,4 @@
- Text-to-SQL Agent (Northwind + PostgreSQL)
+# Text-to-SQL Agent (Northwind + PostgreSQL)
 
 Локальный демо-проект: **вопрос на русском → SQL (PostgreSQL) → выполнение → табличный результат**.
 

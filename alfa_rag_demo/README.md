@@ -1,42 +1,59 @@
-# Alfa-Bank RAG (local demo)
+# Alfa-Bank RAG Demo (локальный прототип)
 
-Локальный прототип RAG-сервиса для FAQ/справки: **retrieval → decision layer → (clarify / answer)**.
+Локальный прототип **RAG-сервиса** для справки/FAQ по базе документов:
 
-Особенности:
-- Dense retrieval по чанкам (FAISS) → агрегация в doc-level результаты.
-- Decision layer: **правила** (и опционально ML-gate как эксперимент).
-- (Опционально) Rerank через CrossEncoder — **выключен по умолчанию**.
-- Need-clarify: "clarify bank" (embeddings + nearest examples) + переписывание уточняющего вопроса через локальную LLM (Ollama).
-- OK: ответ через локальную LLM (Ollama) строго по контексту из найденных источников.
+**retrieval (поиск) → decision layer (ok/need_clarify/no_answer) → (ответ / уточнение)**
 
-> Репозиторий рассчитан на локальный запуск (без внешних API). Для демо достаточно Ollama.
+Проект сделан как портфолио-демо: всё запускается **локально**, без внешних API.
+Генерация текста ответа — **опционально** (через **Ollama**).
+
+---
+
+## Что умеет
+
+- **Dense retrieval** по чанкам: эмбеддинги + **FAISS** → top источники (страницы/доки).
+- **Агрегация** результатов на уровень документа (doc-level).
+- **Decision layer** возвращает статус:
+  - `ok` — можно отвечать по найденным источникам
+  - `need_clarify` — не хватает контекста, формируем уточняющий вопрос
+  - `no_answer` — в базе нет ответа
+- (Опционально) **Rerank** через CrossEncoder (**выключен по умолчанию**).
+- (Опционально) генерация **ответа/уточнения** через локальную LLM (**Ollama**) строго по найденному контексту.
+- (Опционально) прогон по `gold_labels.csv` и отчёт по метрикам.
+
+---
 
 ## Быстрый старт
 
-### Вариант A (рекомендуется): conda env
+> Если проект лежит внутри монорепозитория, просто сначала перейдите в папку проекта:
+> `cd alfa_rag_demo`
 
+### 1) Установка зависимостей
+
+**Вариант A (рекомендуется): conda**
 ```bash
 conda create -n alfa-rag python=3.11 -y
 conda activate alfa-rag
-conda config --env --set channel_priority strict
 
-# Бинарные зависимости ставим через conda-forge/pytorch, чтобы не ломать NumPy
+# Бинарные зависимости ставим через conda, чтобы не ловить проблемы с NumPy/FAISS
 conda install -y -c conda-forge streamlit pyarrow pandas "numpy<2" sentence-transformers transformers
 conda install -y -c pytorch faiss-cpu
 ```
 
-### Вариант B: pip
-
-1) Установите зависимости:
+**Вариант B: pip**
 ```bash
 pip install -r requirements.txt
 ```
 
-2) Положите данные хакатона в `data/` (эти файлы **не** коммитятся в git):
+---
 
-- `data/websites.csv` (обязательно)
-- `data/chunks_websites.parquet` (обязательно)
-- `data/questions_clean.csv` (опционально)
+### 2) Данные (в репозиторий не коммитятся)
+
+Положите файлы в папку `data/`:
+
+- `data/websites.csv` — исходные документы/страницы (**обязательно**)
+- `data/chunks_websites.parquet` — чанки (**обязательно**, можно сгенерировать)
+- `data/questions_clean.csv` — опционально (для экспериментов/подсказок)
 
 Если у вас есть только `websites.csv`, сгенерируйте parquet:
 
@@ -44,126 +61,124 @@ pip install -r requirements.txt
 python scripts/make_chunks_parquet.py --inp data/websites.csv --out data/chunks_websites.parquet
 ```
 
-3) Постройте/загрузите индекс и запустите демо:
+---
+
+### 3) Запуск демо (CLI)
+
 ```bash
 python scripts/run_demo.py "Где посмотреть все мои счета?"
 ```
 
-### Streamlit UI
+---
+
+### 4) Streamlit UI
 
 ```bash
 python -m streamlit run apps/streamlit_app.py
 ```
 
 В интерфейсе можно:
-- выбрать `data_dir` и parquet
+- выбрать `data_dir` и путь к parquet
 - включить/выключить reranker
-- включить LLM (Ollama)
-- указать путь до `gold_labels.csv` (опционально) — используется как "clarify bank" для подсказок при `need_clarify`
+- включить LLM (Ollama) и указать модель
+- указать путь до `gold_labels.csv` (опционально)
 
-## Ollama на Windows: запуск, выбор модели, перенос моделей на диск D
+---
 
-### Проверка, что сервер Ollama запущен
+## (Опционально) LLM через Ollama
 
-Ollama на Windows часто запускается в фоне автоматически. Если команда `ollama serve` ругается:
+Если хотите, чтобы сервис **генерировал текст ответа/уточнения**, установите Ollama и скачайте модель.
 
-> `bind: Only one usage of each socket address...`
-
-значит сервер **уже** слушает `127.0.0.1:11434` — это нормально.
-
-Проверить можно так (PowerShell):
-
-```powershell
-curl.exe http://127.0.0.1:11434
-# или
-iwr -UseBasicParsing http://127.0.0.1:11434
-```
-
-> В PowerShell `curl` — это алиас `Invoke-WebRequest`, поэтому лучше использовать именно `curl.exe`.
-
-### Какую модель ставить
-
-Для ноутбука с RTX 4050 6GB самый простой и быстрый старт:
-
-```powershell
+Пример модели для старта:
+```bash
 ollama pull qwen2.5:3b
 ```
 
-В Streamlit в поле **Ollama model** можно указать `qwen2.5:3b`.
+По умолчанию Ollama доступна по адресу: `http://127.0.0.1:11434`
 
-Если захочешь “потяжелее” (качество обычно лучше, но медленнее) — попробуй `qwen2.5:7b-instruct`.
-На 6GB VRAM может уйти в частичный offload на CPU — это нормально, но будет заметно медленнее.
+> Без Ollama проект тоже работает: вернёт статус и источники, но без “красивого” текста ответа.
 
-### Перенос моделей с диска C на диск D
+---
 
-По умолчанию модели лежат в `%USERPROFILE%\.ollama\models` (обычно `C:\Users\<user>\.ollama\models`).
+## Оценка на gold-разметке (если есть)
 
-Чтобы хранить модели на другом диске, Ollama поддерживает переменную окружения `OLLAMA_MODELS`.
+Если у вас есть `gold_labels.csv`, можно прогнать оценку:
 
-1) Закрой Ollama (если есть значок в трее — **Quit**), либо убей процесс `Ollama.exe` в диспетчере задач.
-
-2) Перенеси текущую папку моделей на D (пример):
-
-```powershell
-mkdir D:\ollama\models
-robocopy "$env:USERPROFILE\.ollama\models" "D:\ollama\models" /E
-```
-
-3) Задай переменную окружения (один раз):
-
-```powershell
-setx OLLAMA_MODELS "D:\\ollama\\models"
-```
-
-4) Перезапусти Ollama (через меню Пуск). После перезапуска:
-
-```powershell
-ollama list
-```
-
-Модели должны появиться без повторной скачки. Если ты поставил `setx`, но всё равно качается в C — почти всегда это потому, что Ollama была запущена **до** изменения переменной (нужен полный перезапуск трея/процесса).
-
-4) Прогон gold-датасета (если есть `gold_labels.csv`):
 ```bash
 python scripts/eval_gold.py
 ```
 
-> Формат разметки: `label_status` строго `ok/need_clarify/no_answer`. Если `ok`, то `gold_web_ids` может содержать несколько `web_id`.
+Формат разметки:
+- `label_status` ∈ `ok / need_clarify / no_answer`
+- если `ok`, то `gold_web_ids` может содержать несколько `web_id`
 
-## Что считается "продом" здесь
+---
 
-Под "продом" в контексте хакатона/собеса — **стабильный локальный сервис**, который:
-- возвращает статус (`ok` / `need_clarify` / `no_answer`)
-- отдаёт top-docs (источники)
-- формирует либо ответ, либо уточняющий вопрос
+## Архитектура пайплайна
 
-Для боевого продакшена добавляются: мониторинг, логирование, rate-limit, бэкенд-векторного хранилища, безопасность, тесты нагрузочные и т.д.
+1) **Retrieval**: эмбеддинги чанков → поиск top-k через FAISS  
+2) **Decision layer**: правила/эвристики → `ok / need_clarify / no_answer`  
+3) **Действие**:
+   - `ok`: (опц.) LLM формирует ответ по контексту
+   - `need_clarify`: формируется уточняющий вопрос
+   - `no_answer`: отказ + рекомендация уточнить запрос
 
-## Конфиг
+---
 
-Через переменные окружения:
+## Структура проекта
+
+```text
+src/alfa_rag/
+  config.py        # конфигурация
+  retrieval.py     # поиск (FAISS)
+  rerank.py        # (опц.) cross-encoder rerank
+  decision.py      # decision layer: ok/need_clarify/no_answer
+  clarify.py       # логика уточнения
+  llm.py           # (опц.) Ollama
+  service.py       # сборка пайплайна
+  eval.py          # метрики/оценка
+  labeling.py      # разметка/утилиты
+
+apps/
+  streamlit_app.py # UI
+
+scripts/
+  make_chunks_parquet.py  # сборка parquet из websites.csv
+  run_demo.py             # CLI-демо
+  eval_gold.py            # прогон по gold
+
+notebooks/
+  *.ipynb          # эксперименты
+```
+
+---
+
+## Конфиг (переменные окружения)
+
+Можно задавать переменные окружения (или через `.env`), например:
+
 - `USE_RERANK=0/1`
 - `RERANK_MODEL=cross-encoder/...`
 - `OLLAMA_MODEL=qwen2.5:3b`
 - `E5_MODEL=intfloat/multilingual-e5-small`
 
-## Структура
-
-```
-src/alfa_rag/
-  config.py
-  retrieval.py
-  rerank.py
-  decision.py
-  clarify.py
-  llm.py
-  service.py
-  eval.py
-  labeling.py
-scripts/
-  run_demo.py
-  eval_gold.py
-notebooks/
-  Untitled8 (10).ipynb   # исходный ноутбук
+Пример (PowerShell):
+```powershell
+$env:USE_RERANK="0"
+$env:OLLAMA_MODEL="qwen2.5:3b"
+python -m streamlit run apps/streamlit_app.py
 ```
 
+Пример (bash):
+```bash
+export USE_RERANK=0
+export OLLAMA_MODEL=qwen2.5:3b
+streamlit run apps/streamlit_app.py
+```
+
+---
+
+## Примечания
+
+- Папка `data/` и артефакты индекса **не коммитятся** (чтобы не тащить большие файлы и данные в GitHub).
+- Если что-то не запускается, первым делом проверьте версии Python/зависимостей и что данные лежат в `data/`.

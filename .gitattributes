@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# ноутбуки — документация, не давать им перебивать язык репозитория
+*.ipynb linguist-documentation

@@ -1,0 +1,7 @@
+
+.env
+*.env
+alfa_rag_demo/
+text2sql_agent/
+__pycache__/
+*.pyc
